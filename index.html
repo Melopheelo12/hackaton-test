@@ -4,10 +4,21 @@
   <meta charset="UTF-8">
   <title>Diagnostic Résilience - Bordeaux</title>
 
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
   <style>
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
       font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       background: #eef2f7;
     }
 
@@ -21,67 +32,81 @@
 
     .container {
       display: flex;
-      height: calc(100vh - 70px);
+      flex: 1;
     }
 
     .sidebar {
-      width: 320px;
+      width: 350px;
       background: white;
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      gap: 12px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
       position: relative;
     }
 
     input {
-      padding: 10px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: 8px;
       border: 1px solid #ccc;
+      outline: none;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    input:focus {
+      border-color: #1e3a5f;
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 95px;
+      left: 20px;
+      right: 20px;
       background: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
       max-height: 200px;
       overflow-y: auto;
-      position: absolute;
-      top: 80px;
-      width: 280px;
       z-index: 1000;
     }
 
-    li {
+    .suggestions div {
       padding: 10px;
       cursor: pointer;
     }
 
-    li:hover {
+    .suggestions div:hover {
       background: #f1f1f1;
     }
 
-    .map-container {
+    #map {
       flex: 1;
     }
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
+    .card {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 5px solid #ccc;
     }
 
-    button {
+    .green { border-left-color: #38a169; }
+    .orange { border-left-color: #dd6b20; }
+    .red { border-left-color: #e53e3e; }
+
+    select {
       padding: 10px;
-      background: #1e3a5f;
-      color: white;
-      border: none;
       border-radius: 6px;
-      cursor: pointer;
+    }
+
+    .legend {
+      display: none;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .legend.active {
+      display: block;
     }
   </style>
 </head>
@@ -93,71 +118,123 @@
 <div class="container">
 
   <div class="sidebar">
-    <input type="text" id="search" placeholder="Tape une adresse...">
-    <ul id="suggestions"></ul>
-    <button onclick="clearMap()">Réinitialiser carte</button>
+
+    <input type="text" id="search" placeholder="Rechercher une adresse...">
+    <div id="suggestions" class="suggestions"></div>
+
+    <button onclick="toggleLegend()">📊 Légende</button>
+
+    <div id="legend" class="legend">
+      🟢 Faible : zone protégée<br>
+      🟠 Modéré : exposition intermédiaire<br>
+      🔴 Élevé : forte exposition chaleur
+    </div>
+
+    <div id="result" class="card">
+      Entrez une adresse pour obtenir un diagnostic.
+    </div>
+
   </div>
 
-  <div class="map-container">
-    <iframe id="map"
-      src="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.902%2C-0.6695%2C11z">
-    </iframe>
-  </div>
+  <div id="map"></div>
 
 </div>
 
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-const searchInput = document.getElementById("search");
-const suggestionsBox = document.getElementById("suggestions");
-const mapFrame = document.getElementById("map");
+  // MAP INIT
+  const map = L.map('map').setView([44.84, -0.58], 12);
 
-// 🔎 Autocomplete via API Nominatim
-searchInput.addEventListener("input", async () => {
-  const query = searchInput.value;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
 
-  if (query.length < 3) {
+  let marker;
+
+  const searchInput = document.getElementById("search");
+  const suggestionsBox = document.getElementById("suggestions");
+  const resultBox = document.getElementById("result");
+
+  // AUTOCOMPLETE
+  searchInput.addEventListener("input", async () => {
+    const query = searchInput.value;
+
+    if (query.length < 3) {
+      suggestionsBox.innerHTML = "";
+      return;
+    }
+
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5&viewbox=-0.8,44.8,-0.5,45.0&bounded=1`
+    );
+
+    const data = await res.json();
+
     suggestionsBox.innerHTML = "";
-    return;
+
+    data.forEach(place => {
+      const div = document.createElement("div");
+      div.textContent = place.display_name;
+
+      div.onclick = () => selectPlace(place);
+
+      suggestionsBox.appendChild(div);
+    });
+  });
+
+  // SELECT ADDRESS
+  function selectPlace(place) {
+    const lat = place.lat;
+    const lon = place.lon;
+
+    searchInput.value = place.display_name;
+    suggestionsBox.innerHTML = "";
+
+    // Zoom map
+    map.setView([lat, lon], 16);
+
+    // Marker
+    if (marker) {
+      map.removeLayer(marker);
+    }
+
+    marker = L.marker([lat, lon]).addTo(map);
+
+    // Fake scoring (à remplacer par tes données GeoJSON)
+    const score = Math.floor(Math.random() * 10) + 1;
+
+    let level, cls, advice;
+
+    if (score >= 7) {
+      level = "🔴 Risque ÉLEVÉ";
+      cls = "card red";
+      advice = "Zone fortement exposée. Recommandé : végétalisation, ombrage, matériaux clairs.";
+    } else if (score >= 4) {
+      level = "🟠 Risque MODÉRÉ";
+      cls = "card orange";
+      advice = "Exposition intermédiaire. Ajouter des arbres, limiter les surfaces minérales.";
+    } else {
+      level = "🟢 Risque FAIBLE";
+      cls = "card green";
+      advice = "Zone relativement protégée.";
+    }
+
+    resultBox.className = cls;
+
+    resultBox.innerHTML = `
+      <strong>Adresse :</strong><br>${place.display_name}<br><br>
+      <strong>Score :</strong> ${score}/10<br>
+      <strong>Niveau :</strong> ${level}<br><br>
+      <strong>Conseil :</strong><br>${advice}
+    `;
   }
 
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5&viewbox=-0.8,44.8,-0.5,45.0&bounded=1`
-  );
-
-  const data = await res.json();
-
-  suggestionsBox.innerHTML = "";
-
-  data.forEach(place => {
-    const li = document.createElement("li");
-    li.textContent = place.display_name;
-
-    li.onclick = () => selectPlace(place);
-
-    suggestionsBox.appendChild(li);
-  });
-});
-
-// 📍 Quand on clique sur une adresse
-function selectPlace(place) {
-  const lat = place.lat;
-  const lon = place.lon;
-
-  searchInput.value = place.display_name;
-  suggestionsBox.innerHTML = "";
-
-  // Zoom carte Felt (via paramètres URL)
-  const newUrl = `https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=${lat}%2C${lon}%2C16z`;
-
-  mapFrame.src = newUrl;
-}
-
-// 🔄 Reset map
-function clearMap() {
-  mapFrame.src = "https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.902%2C-0.6695%2C11z";
-  searchInput.value = "";
-  suggestionsBox.innerHTML = "";
-}
+  // LEGEND TOGGLE
+  function toggleLegend() {
+    document.getElementById("legend").classList.toggle("active");
+  }
 </script>
 
 </body>
