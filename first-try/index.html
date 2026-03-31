@@ -3,31 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <title>Diagnostic Résilience - Bordeaux</title>
+
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
+      padding: 0;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #eef2f7;
+      color: #333;
     }
 
     header {
-      background: #1e3a5f;
+      background: linear-gradient(135deg, #1e3a5f, #2c5282);
       color: white;
-      padding: 15px;
+      padding: 20px;
       text-align: center;
+      font-size: 22px;
+      font-weight: bold;
     }
 
     .container {
       display: flex;
-      height: calc(100vh - 70px);
+      height: calc(100vh - 80px);
     }
 
     .sidebar {
-      width: 300px;
+      width: 320px;
       background: white;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 25px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
+
+    .sidebar h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    input:focus {
+      border-color: #2c5282;
+    }
+
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #2c5282;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #1e3a5f;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #f7fafc;
+      border-left: 5px solid #ccc;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .high { border-left-color: #e53e3e; }
+    .medium { border-left-color: #dd6b20; }
+    .low { border-left-color: #38a169; }
 
     .map-container {
       flex: 1;
@@ -38,45 +96,27 @@
       height: 100%;
       border: none;
     }
-
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-    }
-
-    button {
-      background: #1e3a5f;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .result {
-      margin-top: 20px;
-      padding: 10px;
-      background: #eef2f7;
-    }
   </style>
 </head>
+
 <body>
 
 <header>
-  <h1>🌡️ Diagnostic Résilience - Bordeaux</h1>
+  🌡️ Diagnostic Résilience - Bordeaux
 </header>
 
 <div class="container">
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <h3>Analyser une adresse</h3>
+    <h2>Analyse d’adresse</h2>
 
     <input type="text" id="address" placeholder="Ex: 10 rue Sainte-Catherine">
 
     <button onclick="analyze()">Analyser</button>
 
-    <div class="result" id="result">
-      Entrez une adresse pour voir le diagnostic.
+    <div id="result" class="result">
+      Entrez une adresse pour obtenir un diagnostic.
     </div>
   </div>
 
@@ -91,29 +131,44 @@
 
 <script>
 function analyze() {
-  const address = document.getElementById("address").value;
+  const address = document.getElementById("address").value.trim();
   const result = document.getElementById("result");
 
   if (!address) {
+    result.className = "result";
     result.innerHTML = "⚠️ Veuillez entrer une adresse.";
     return;
   }
 
-  // Simulation simple (hackathon MVP)
-  const riskLevel = Math.random();
+  // Simulation réaliste de score (MVP hackathon)
+  const score = Math.floor(Math.random() * 10) + 1;
 
-  let text = "";
-  if (riskLevel > 0.7) {
-    text = "🔴 Risque ÉLEVÉ : zone fortement exposée à la chaleur.<br>Conseil : végétaliser, éviter surfaces bétonnées.";
-  } else if (riskLevel > 0.4) {
-    text = "🟠 Risque MODÉRÉ : exposition intermédiaire.<br>Conseil : ajouter de l'ombre et des protections solaires.";
+  let level = "";
+  let advice = "";
+  let className = "";
+
+  if (score >= 7) {
+    level = "🔴 Risque ÉLEVÉ";
+    advice = "Zone fortement exposée à la chaleur. Installez des protections solaires et végétalisez si possible.";
+    className = "result high";
+  } else if (score >= 4) {
+    level = "🟠 Risque MODÉRÉ";
+    advice = "Exposition intermédiaire. Ajoutez de l’ombre et limitez les surfaces bétonnées.";
+    className = "result medium";
   } else {
-    text = "🟢 Risque FAIBLE : zone relativement protégée.";
+    level = "🟢 Risque FAIBLE";
+    advice = "Zone relativement protégée. Conditions favorables.";
+    className = "result low";
   }
+
+  result.className = className;
 
   result.innerHTML = `
     <strong>Adresse :</strong> ${address}<br><br>
-    ${text}
+    <strong>Score :</strong> ${score}/10<br>
+    <strong>Niveau :</strong> ${level}<br><br>
+    <strong>Conseil :</strong><br>
+    ${advice}
   `;
 }
 </script>
