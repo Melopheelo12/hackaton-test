@@ -381,3 +381,24 @@ body {
   .map-container { flex: 1; min-height: 300px; }
   .result-card { min-height: unset; }
 }
+.map-container {
+  position: relative;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+#felt-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  z-index: 2;
+  opacity: 0.6; /* 🔥 réglable */
+  pointer-events: none; /* laisse passer les clics vers Leaflet */
+}
