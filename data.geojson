@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "delta": 8 },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.58, 44.84]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "delta": 3 },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.57, 44.85]
+      }
+    }
+  ]
+}
