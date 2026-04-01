@@ -2,48 +2,84 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Diagnostic Résilience - Bordeaux</title>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Leaflet -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Résilience Bordeaux · Diagnostic Chaleur</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>🌡️ Diagnostic Résilience - Bordeaux</header>
+  <div class="app-wrapper">
 
-<div class="container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-  <div class="sidebar">
+      <div class="brand">
+        <span class="brand-icon">🌡️</span>
+        <div>
+          <div class="brand-title">Résilience</div>
+          <div class="brand-sub">Bordeaux · Diagnostic Chaleur</div>
+        </div>
+      </div>
 
-    <input type="text" id="search" placeholder="Rechercher une adresse...">
-    <div id="suggestions" class="suggestions"></div>
+      <!-- SEARCH -->
+      <div class="search-section">
+        <label class="section-label">Rechercher</label>
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search" placeholder="Adresse ou nom d'école…" autocomplete="off">
+        </div>
+        <div id="suggestions" class="suggestions"></div>
+      </div>
 
-    <button onclick="toggleLegend()">📊 Légende</button>
+      <!-- LEGEND -->
+      <div class="legend-section">
+        <label class="section-label">Légende</label>
+        <div class="legend-items">
+          <div class="legend-item">
+            <span class="dot dot-green"></span>
+            <div>
+              <strong>Risque faible</strong>
+              <p>Zone bien végétalisée</p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="dot dot-orange"></span>
+            <div>
+              <strong>Risque modéré</strong>
+              <p>Exposition intermédiaire</p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="dot dot-red"></span>
+            <div>
+              <strong>Risque élevé</strong>
+              <p>Forte exposition chaleur</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <div id="legend" class="legend">
-      🟢 Faible : zone protégée<br>
-      🟠 Modéré : exposition intermédiaire<br>
-      🔴 Élevé : forte exposition chaleur
-    </div>
+      <!-- RESULT CARD -->
+      <div id="result" class="result-card result-default">
+        <div class="result-placeholder">
+          <span>📍</span>
+          <p>Entrez une adresse ou cliquez sur une école pour obtenir son diagnostic de chaleur.</p>
+        </div>
+      </div>
 
-    <div id="result" class="card">
-      Entrez une adresse pour obtenir un diagnostic.
-    </div>
+    </aside>
+
+    <!-- MAP -->
+    <main class="map-container">
+      <div id="map"></div>
+      <div class="map-badge">© OpenStreetMap · Données éducation nationale</div>
+    </main>
 
   </div>
 
-  <div id="map"></div>
-
-</div>
-
-<!-- JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="script.js"></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
