@@ -4,111 +4,12 @@
   <meta charset="UTF-8">
   <title>Diagnostic Résilience - Bordeaux</title>
 
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+
   <!-- Leaflet -->
-  <link rel="stylesheet" href="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.8044%2C-0.5287%2C11.06z&legend=1&cooperativeGestures=1&link=1&geolocation=0&zoomControls=1&scaleBar=1"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: #eef2f7;
-    }
-
-    header {
-      background: #1e3a5f;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 20px;
-    }
-
-    .container {
-      display: flex;
-      flex: 1;
-    }
-
-    .sidebar {
-      width: 350px;
-      background: white;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-      position: relative;
-    }
-
-    input {
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: #1e3a5f;
-    }
-
-    .suggestions {
-      position: absolute;
-      top: 95px;
-      left: 20px;
-      right: 20px;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 1000;
-    }
-
-    .suggestions div {
-      padding: 10px;
-      cursor: pointer;
-    }
-
-    .suggestions div:hover {
-      background: #f1f1f1;
-    }
-
-    #map {
-      flex: 1;
-    }
-
-    .card {
-      background: #f7fafc;
-      padding: 15px;
-      border-radius: 10px;
-      border-left: 5px solid #ccc;
-    }
-
-    .green { border-left-color: #38a169; }
-    .orange { border-left-color: #dd6b20; }
-    .red { border-left-color: #e53e3e; }
-
-    select {
-      padding: 10px;
-      border-radius: 6px;
-    }
-
-    .legend {
-      display: none;
-      margin-top: 10px;
-      font-size: 14px;
-    }
-
-    .legend.active {
-      display: block;
-    }
-  </style>
 </head>
 
 <body>
@@ -140,102 +41,9 @@
 
 </div>
 
-<!-- Leaflet -->
+<!-- JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-  // MAP INIT
-  const map = L.map('map').setView([44.84, -0.58], 12);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
-
-  let marker;
-
-  const searchInput = document.getElementById("search");
-  const suggestionsBox = document.getElementById("suggestions");
-  const resultBox = document.getElementById("result");
-
-  // AUTOCOMPLETE
-  searchInput.addEventListener("input", async () => {
-    const query = searchInput.value;
-
-    if (query.length < 3) {
-      suggestionsBox.innerHTML = "";
-      return;
-    }
-
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5&viewbox=-0.8,44.8,-0.5,45.0&bounded=1`
-    );
-
-    const data = await res.json();
-
-    suggestionsBox.innerHTML = "";
-
-    data.forEach(place => {
-      const div = document.createElement("div");
-      div.textContent = place.display_name;
-
-      div.onclick = () => selectPlace(place);
-
-      suggestionsBox.appendChild(div);
-    });
-  });
-
-  // SELECT ADDRESS
-  function selectPlace(place) {
-    const lat = place.lat;
-    const lon = place.lon;
-
-    searchInput.value = place.display_name;
-    suggestionsBox.innerHTML = "";
-
-    // Zoom map
-    map.setView([lat, lon], 16);
-
-    // Marker
-    if (marker) {
-      map.removeLayer(marker);
-    }
-
-    marker = L.marker([lat, lon]).addTo(map);
-
-    // Fake scoring (à remplacer par tes données GeoJSON)
-    const score = Math.floor(Math.random() * 10) + 1;
-
-    let level, cls, advice;
-
-    if (score >= 7) {
-      level = "🔴 Risque ÉLEVÉ";
-      cls = "card red";
-      advice = "Zone fortement exposée. Recommandé : végétalisation, ombrage, matériaux clairs.";
-    } else if (score >= 4) {
-      level = "🟠 Risque MODÉRÉ";
-      cls = "card orange";
-      advice = "Exposition intermédiaire. Ajouter des arbres, limiter les surfaces minérales.";
-    } else {
-      level = "🟢 Risque FAIBLE";
-      cls = "card green";
-      advice = "Zone relativement protégée.";
-    }
-
-    resultBox.className = cls;
-
-    resultBox.innerHTML = `
-      <strong>Adresse :</strong><br>${place.display_name}<br><br>
-      <strong>Score :</strong> ${score}/10<br>
-      <strong>Niveau :</strong> ${level}<br><br>
-      <strong>Conseil :</strong><br>${advice}
-    `;
-  }
-
-  // LEGEND TOGGLE
-  function toggleLegend() {
-    document.getElementById("legend").classList.toggle("active");
-  }
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
