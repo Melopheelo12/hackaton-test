@@ -236,3 +236,17 @@ function selectAddress(feature) {
     displayResult(`${nom} (école la plus proche)`, addr, score);
   }
 }
+// ─── TOGGLE FELT OVERLAY ─────────────────────
+
+const feltLayer = document.getElementById("felt-layer");
+const toggleBtn = document.getElementById("toggle-felt-btn");
+
+toggleBtn.addEventListener("click", () => {
+  if (feltLayer.style.display === "none") {
+    feltLayer.style.display = "block";
+    toggleBtn.textContent = "Cacher chaleur";
+  } else {
+    feltLayer.style.display = "none";
+    toggleBtn.textContent = "Afficher chaleur";
+  }
+});
