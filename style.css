@@ -1,87 +1,40 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #eef2f7;
-}
-
-header {
-  background: #1e3a5f;
-  color: white;
-  padding: 15px;
-  text-align: center;
-  font-size: 20px;
-}
-
-.container {
-  display: flex;
-  flex: 1;
-}
-
+/* Positionnement des suggestions au-dessus de la carte */
 .sidebar {
-  width: 350px;
-  background: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-  position: relative;
-}
-
-input {
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+    position: relative; /* Pour que les suggestions se placent bien */
 }
 
 .suggestions {
-  position: absolute;
-  top: 95px;
-  left: 20px;
-  right: 20px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  max-height: 200px;
-  overflow-y: auto;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    position: absolute; /* IMPORTANT : flottant au-dessus */
+    width: calc(100% - 40px); /* Ajuster selon ton padding */
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.suggestions div {
-  padding: 10px;
-  cursor: pointer;
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
 }
 
-.suggestions div:hover {
-  background: #f1f1f1;
+.suggestion-item:hover {
+    background-color: #f0f0f0;
 }
 
-#map {
-  flex: 1;
-}
-
+/* Couleurs des cartes de résultat */
 .card {
-  background: #f7fafc;
-  padding: 15px;
-  border-radius: 10px;
-  border-left: 5px solid #ccc;
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f9f9f9;
 }
 
-.green { border-left-color: #38a169; }
-.orange { border-left-color: #dd6b20; }
-.red { border-left-color: #e53e3e; }
-
-.legend {
-  display: none;
-}
-
-.legend.active {
-  display: block;
-}
+.card.red { border-left: 8px solid #e74c3c; background: #fdf2f2; }
+.card.orange { border-left: 8px solid #f39c12; background: #fef9f1; }
+.card.green { border-left: 8px solid #2ecc71; background: #f2fbf5; }
