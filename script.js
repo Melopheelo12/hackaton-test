@@ -1,3 +1,4 @@
+console.log("JS chargé");
 // INIT MAP
 const map = L.map('map').setView([44.84, -0.58], 12);
 
