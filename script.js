@@ -238,15 +238,27 @@ function selectAddress(feature) {
 }
 // ─── TOGGLE FELT OVERLAY ─────────────────────
 
+// ─── SYNC FELT QUAND LA CARTE BOUGE ──────────────────────────────────────────
 const feltLayer = document.getElementById("felt-layer");
-const toggleBtn = document.getElementById("toggle-felt-btn");
 
-toggleBtn.addEventListener("click", () => {
-  if (feltLayer.style.display === "none") {
-    feltLayer.style.display = "block";
-    toggleBtn.textContent = "Cacher chaleur";
-  } else {
-    feltLayer.style.display = "none";
-    toggleBtn.textContent = "Afficher chaleur";
-  }
+function syncFelt() {
+  const c = map.getCenter();
+  const z = map.getZoom();
+  feltLayer.src = `https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=${c.lat.toFixed(5)},${c.lng.toFixed(5)},${z.toFixed(2)}z&legend=0&link=1&geolocation=0&cooperativeGestures=1`;
+}
+
+map.on('moveend', syncFelt);
+map.on('zoomend', syncFelt);
+
+// ─── SLIDERS OPACITÉ ─────────────────────────────────────────────────────────
+const mapDiv = document.getElementById("map");
+
+document.getElementById("op-leaflet").addEventListener("input", function () {
+  mapDiv.style.opacity = this.value / 100;
+  document.getElementById("lf-val").textContent = this.value + "%";
+});
+
+document.getElementById("op-felt").addEventListener("input", function () {
+  feltLayer.style.opacity = this.value / 100;
+  document.getElementById("ft-val").textContent = this.value + "%";
 });
