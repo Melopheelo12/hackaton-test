@@ -151,9 +151,6 @@ body {
 /* =============================================
    MAP
    ============================================= */
-/* =============================================
-   MAP
-   ============================================= */
 .map-container {
   flex: 1;
   position: relative;
@@ -242,36 +239,6 @@ input[type=range] {
   padding: 4px 10px;
   border-radius: 6px;
   z-index: 500;
-}
-
-/* =============================================
-   FELT OVERLAY (IMPORTANT)
-   ============================================= */
-#felt-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  z-index: 2;
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* Toggle button */
-#toggle-felt-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 999;
-  padding: 8px 12px;
-  background: white;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 /* =============================================
