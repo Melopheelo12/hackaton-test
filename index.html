@@ -13,6 +13,7 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
+
       <div class="brand">
         <span class="brand-icon">🌡️</span>
         <div>
@@ -38,22 +39,22 @@
           <div class="legend-item">
             <span class="dot dot-green"></span>
             <div>
-              <strong>Risque faible</strong>
-              <p>Zone bien végétalisée</p>
+              <strong>Risque faible (0–3)</strong>
+              <p>Zone végétalisée, fraîche</p>
             </div>
           </div>
           <div class="legend-item">
             <span class="dot dot-orange"></span>
             <div>
-              <strong>Risque modéré</strong>
+              <strong>Risque modéré (4–6)</strong>
               <p>Exposition intermédiaire</p>
             </div>
           </div>
           <div class="legend-item">
             <span class="dot dot-red"></span>
             <div>
-              <strong>Risque élevé</strong>
-              <p>Forte exposition chaleur</p>
+              <strong>Risque élevé (7–10)</strong>
+              <p>Forte exposition à la chaleur</p>
             </div>
           </div>
         </div>
@@ -63,9 +64,10 @@
       <div id="result" class="result-card result-default">
         <div class="result-placeholder">
           <span>📍</span>
-          <p>Entrez une adresse ou cliquez sur une école pour obtenir son diagnostic de chaleur.</p>
+          <p>Cliquez sur une école ou entrez une adresse pour obtenir le diagnostic chaleur.</p>
         </div>
       </div>
+
     </aside>
 
     <!-- MAP -->
@@ -80,16 +82,16 @@
         src="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.84,-0.58,12z&legend=0&link=1&geolocation=0&cooperativeGestures=1"
       ></iframe>
 
-      <!-- COUCHE 2 : Leaflet interactif (marqueurs + fond sombre) -->
+      <!-- COUCHE 2 : Leaflet satellite + marqueurs interactifs -->
       <div id="map"></div>
 
-      <!-- Badge attribution -->
-      <div class="map-badge">© OpenStreetMap · Données éducation nationale</div>
+      <!-- Attribution -->
+      <div class="map-badge">© Esri · OpenStreetMap · Éducation nationale</div>
 
-      <!-- Contrôles opacité des couches -->
+      <!-- Contrôles opacité -->
       <div id="layer-controls">
         <div class="layer-row">
-          <span class="layer-label">🗺️ Carte interactive</span>
+          <span class="layer-label">🛰️ Carte satellite</span>
           <input type="range" id="op-leaflet" min="10" max="100" value="100" step="1">
           <span class="op-val" id="lf-val">100%</span>
         </div>
