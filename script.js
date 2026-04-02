@@ -4,28 +4,30 @@ console.log("✅ Script chargé");
 const map = L.map('map', { zoomControl: false }).setView([44.84, -0.58], 12);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19, opacity: 0
+  attribution: '&copy; CARTO', maxZoom: 19, opacity: 0
 }).addTo(map);
 
 let marker;
 let geoData;
+let allMarkers = []; // {feature, layer}
 
-// ─── HELPERS COULEUR / TYPE ───────────────────────────────────────────────────
-function getColor(delta) {
-  if (delta >= 7) return "#e74c3c";
-  if (delta >= 4) return "#f39c12";
-  return "#2ecc71";
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function getColor(d) {
+  return d >= 7 ? "#e74c3c" : d >= 4 ? "#f39c12" : "#2ecc71";
+}
+
+function getScoreClass(d) {
+  return d >= 7 ? "score-red" : d >= 4 ? "score-orange" : "score-green";
 }
 
 function getSchoolType(props) {
-  const amenity  = props.amenity || "";
-  const schoolFR = props["school:FR"] || "";
-  if (amenity === "kindergarten")                                         return "🍼 Crèche / Maternelle";
-  if (schoolFR.includes("lycée"))                                         return "🎓 Lycée";
-  if (schoolFR.includes("collège"))                                       return "📚 Collège";
-  if (schoolFR.includes("maternelle"))                                    return "🌱 École maternelle";
-  if (schoolFR.includes("élémentaire") || schoolFR.includes("primaire")) return "✏️ École primaire";
-  return "🏫 Établissement scolaire";
+  const a = props.amenity || "", s = props["school:FR"] || "";
+  if (a === "kindergarten")                              return "🍼 Crèche / Maternelle";
+  if (s.includes("lycée"))                               return "🎓 Lycée";
+  if (s.includes("collège"))                             return "📚 Collège";
+  if (s.includes("maternelle"))                          return "🌱 École maternelle";
+  if (s.includes("élémentaire") || s.includes("primaire")) return "✏️ École primaire";
+  return "🏫 Établissement";
 }
 
 function getOperatorLabel(props) {
@@ -35,141 +37,54 @@ function getOperatorLabel(props) {
   return null;
 }
 
-// ─── SCORING & BAROMÈTRE ─────────────────────────────────────────────────────
 function getBarometre(score) {
-  if (score >= 7) return { cls: "rouge",  icon: "🔴", label: "ROUGE — Urgence",   color: "#dc2626", bg: "#fff5f5", border: "#fca5a5" };
-  if (score >= 4) return { cls: "orange", icon: "🟠", label: "ORANGE — Vigilance", color: "#d97706", bg: "#fffbeb", border: "#fcd34d" };
-  return              { cls: "vert",   icon: "🟢", label: "VERT — Protection",  color: "#16a34a", bg: "#f0fdf4", border: "#86efac" };
+  if (score >= 7) return { icon: "🔴", label: "ROUGE — Urgence",    color: "#dc2626", bg: "#fff5f5", border: "#fca5a5" };
+  if (score >= 4) return { icon: "🟠", label: "ORANGE — Vigilance", color: "#d97706", bg: "#fffbeb", border: "#fcd34d" };
+  return              { icon: "🟢", label: "VERT — Protection",  color: "#16a34a", bg: "#f0fdf4", border: "#86efac" };
 }
 
-// ─── RECOMMANDATIONS 7x4 ─────────────────────────────────────────────────────
 function getRecommandations(score) {
-  // ROUGE > 7
   if (score >= 7) return {
-    decideurs: [
-      "DÉCROUTAGE : Retrait de 50% de l'asphalte pour retrouver la pleine terre.",
-      "STABILISATION RGA : Créer des noues d'infiltration pour hydrater l'argile et éviter les fissures.",
-      "MICRO-FORÊT : Plantation 'Miyawaki' (3 arbres/m²) pour un dôme de fraîcheur naturel.",
-      "COOL ROOF : Revêtement blanc réflectif sur les toits pour casser l'absorption de chaleur.",
-      "SOLS VIVANTS : Pavés enherbés ou bois (matériaux à faible inertie) en remplacement du bitume.",
-      "OMBRE BIOCLIMATIQUE : Pergolas végétalisées pour protéger les façades du rayonnement.",
-      "RÉSERVES HYDRIQUES : Cuves de 10m³ pour compenser le déficit hydrique des sols."
-    ],
-    ecole: [
-      "RYTHME : Récréations matinales et repli en salles fraîches l'après-midi.",
-      "OYATS : Jarres d'irrigation enterrées pour un arrosage profond stabilisant l'argile.",
-      "PAILLAGE : 15cm de broyat bois pour empêcher la rétractation argileuse.",
-      "EAUX GRISES : Réutiliser l'eau des lavabos pour humidifier les fondations.",
-      "FREE-COOLING : Ventilation nocturne forcée (3h-6h) pour évacuer les calories des murs.",
-      "BASSINAGE : Humidifier les feuillages à 11h pour saturer l'air en fraîcheur.",
-      "AMBASSADEURS : Élèves responsables du suivi de l'humidité et du bien-être végétal."
-    ],
-    familles: [
-      "RASSURANCE : Bulletin 'Confort' pour apaiser l'anxiété des familles.",
-      "VENTURI : Humidifier les avant-bras pour refroidir le sang circulant.",
-      "DRESS-CODE : Fibres naturelles (coton/lin), casquette et nuque couverte.",
-      "HYDRATATION : Gourde isotherme et protocole 'petite gorgée' toutes les 20 min.",
-      "SLOW MOTION : Ralentir les jeux pour limiter la surchauffe interne.",
-      "RÉCUPÉRATION : Douche tiède (30°C) au retour pour la baisse thermique.",
-      "VIGILANCE : Observer les urines foncées ou l'apathie (signes de déshydratation)."
-    ],
-    citoyens: [
-      "HALTE FRAÎCHEUR : Ouvrir la cour aux seniors isolés pendant les pics de chaleur.",
-      "SIGNALÉTIQUE : Panneaux expliquant le lien entre végétal et protection des bâtiments (RGA).",
-      "DATA-PARTAGE : QR Code sur le portail pour consulter le score thermique en direct.",
-      "CHANTIER : Impliquer les riverains dans les plantations (lien nature-quartier).",
-      "ARROSAGE : Réseau de voisins pour veiller sur le parc durant les vacances.",
-      "ÉCO-CIVISME : Campagne 'Moteur Coupé' aux abords pour réduire l'ozone.",
-      "HUB : Faire de l'école le modèle de résilience contre le retrait des argiles."
-    ]
+    decideurs: ["DÉCROUTAGE : Retrait de 50% de l'asphalte pour retrouver la pleine terre.","STABILISATION RGA : Créer des noues d'infiltration pour hydrater l'argile.","MICRO-FORÊT : Plantation 'Miyawaki' (3 arbres/m²) pour un dôme de fraîcheur.","COOL ROOF : Revêtement blanc réflectif sur les toits.","SOLS VIVANTS : Pavés enherbés en remplacement du bitume.","OMBRE BIOCLIMATIQUE : Pergolas végétalisées sur les façades.","RÉSERVES HYDRIQUES : Cuves de 10m³ pour compenser le déficit hydrique."],
+    ecole:     ["RYTHME : Récréations matinales, repli en salles fraîches l'après-midi.","OYATS : Jarres d'irrigation enterrées stabilisant l'argile.","PAILLAGE : 15cm de broyat bois contre la rétractation argileuse.","EAUX GRISES : Réutiliser l'eau des lavabos pour humidifier les fondations.","FREE-COOLING : Ventilation nocturne forcée (3h–6h).","BASSINAGE : Humidifier les feuillages à 11h.","AMBASSADEURS : Élèves responsables du suivi de l'humidité."],
+    familles:  ["RASSURANCE : Bulletin 'Confort' pour apaiser l'anxiété.","VENTURI : Humidifier les avant-bras pour refroidir le sang.","DRESS-CODE : Fibres naturelles, casquette, nuque couverte.","HYDRATATION : Gourde isotherme, petite gorgée toutes les 20 min.","SLOW MOTION : Ralentir les jeux pour limiter la surchauffe.","RÉCUPÉRATION : Douche tiède (30°C) au retour.","VIGILANCE : Urines foncées ou apathie = déshydratation."],
+    citoyens:  ["HALTE FRAÎCHEUR : Ouvrir la cour aux seniors pendant les pics.","SIGNALÉTIQUE : Panneaux lien végétal / protection bâtiments (RGA).","DATA-PARTAGE : QR Code pour consulter le score thermique.","CHANTIER : Riverains impliqués dans les plantations.","ARROSAGE : Réseau de voisins pour les vacances.","ÉCO-CIVISME : Campagne 'Moteur Coupé' aux abords.","HUB : L'école comme modèle de résilience argile."]
   };
-
-  // ORANGE 4-7
   if (score >= 4) return {
-    decideurs: [
-      "Albédo clair sur les revêtements de sol.",
-      "Murs de lierre pour rafraîchir les façades.",
-      "Puits perdus pour infiltrer les eaux pluviales.",
-      "Bancs en pierre naturelle pour limiter la réflexion thermique.",
-      "Sondes d'humidité dans les sols argileux.",
-      "Voiles d'ombrage sur les cours exposées au sud.",
-      "Noues drainantes le long des bâtiments."
-    ],
-    ecole: [
-      "Classe dehors : enseigner sous les arbres.",
-      "Bassinage des feuillages avant les récréations.",
-      "Oyats : jarres d'irrigation enterrées.",
-      "Collecte des eaux des gourdes pour arroser.",
-      "Ateliers eau : sensibiliser aux cycles naturels.",
-      "Stores fermés dès 8h sur les façades ensoleillées.",
-      "Ventilation des salles pendant les pauses."
-    ],
-    familles: [
-      "Crème solaire adaptée à l'indice UV.",
-      "Identifier le chemin de l'ombre jusqu'à l'école.",
-      "Douche tiède au retour pour abaisser la température.",
-      "Fermer les volets côté soleil en journée.",
-      "Organiser un moment calme après l'école.",
-      "Eau à température ambiante (pas glacée).",
-      "Chapeau obligatoire pour les sorties."
-    ],
-    citoyens: [
-      "Végétaliser les balcons et façades du quartier.",
-      "Challenge 'Zéro Bitume' avec les riverains.",
-      "Guide fraîcheur à distribuer dans les boîtes aux lettres.",
-      "Fête nature dans la cour de l'école.",
-      "Brigade de voisins pour l'arrosage collectif.",
-      "Information sur les risques RGA (retrait-gonflement argile).",
-      "Créer un lien de solidarité avec les seniors isolés."
-    ]
+    decideurs: ["Albédo clair sur les revêtements de sol.","Murs de lierre pour rafraîchir les façades.","Puits perdus pour infiltrer les eaux pluviales.","Bancs en pierre naturelle.","Sondes d'humidité dans les sols argileux.","Voiles d'ombrage sur les cours exposées.","Noues drainantes le long des bâtiments."],
+    ecole:     ["Classe dehors sous les arbres.","Bassinage des feuillages avant récréation.","Oyats : jarres d'irrigation enterrées.","Collecte des eaux des gourdes pour arroser.","Ateliers eau sur les cycles naturels.","Stores fermés dès 8h côté soleil.","Ventilation des salles pendant les pauses."],
+    familles:  ["Crème solaire adaptée à l'indice UV.","Identifier le chemin de l'ombre jusqu'à l'école.","Douche tiède au retour.","Fermer les volets côté soleil.","Moment calme après l'école.","Eau à température ambiante.","Chapeau pour les sorties."],
+    citoyens:  ["Végétaliser les balcons et façades.","Challenge 'Zéro Bitume' avec les riverains.","Guide fraîcheur dans les boîtes aux lettres.","Fête nature dans la cour.","Brigade de voisins pour l'arrosage.","Information sur les risques RGA.","Solidarité avec les seniors isolés."]
   };
-
-  // VERT < 4
   return {
-    decideurs: [
-      "PÉRENNISATION : Taille douce des arbres pour maintenir une ombre portée maximale.",
-      "SOLS : Apport régulier de compost pour maintenir la porosité et l'humidité des argiles.",
-      "BIODIVERSITÉ : Installation de nichoirs et d'hôtels à insectes (équilibre écosystémique).",
-      "VEILLE BÂTI : Inspection annuelle des fondations pour prévenir tout micro-retrait d'argile.",
-      "OPTIMISATION : Installation de récupérateurs d'eau de pluie pour l'autonomie du jardin.",
-      "CONNECTIVITÉ : Créer des passages pour la petite faune entre les zones vertes.",
-      "MATÉRIAUX : Remplacer progressivement les éléments sombres par des tons clairs."
-    ],
-    ecole: [
-      "ÉCOLE DE LA FORÊT : Généraliser les cours en extérieur pour le bien-être cognitif.",
-      "JARDINAGE : Entretenir le potager avec les enfants (notion de cycle de vie).",
-      "GESTION EAU : Maintenance des systèmes d'irrigation économes (goutte-à-goutte).",
-      "TRI : Compostage des déchets de cantine pour nourrir les sols de l'école.",
-      "OBSERVATION : Relever les températures avec les élèves (effet 'Oasis').",
-      "PARTAGE : Accueillir des classes de zones 'Rouges' pour des activités fraîches.",
-      "ARCHIVAGE : Tenir un carnet de santé de chaque arbre (croissance, ombre)."
-    ],
-    familles: [
-      "ÉDUCATION : Transmettre les bons réflexes comme des habitudes de vie.",
-      "NATURE : Encourager les sorties en famille dans les parcs.",
-      "ÉCO-GESTE : Sensibiliser à l'économie d'eau domestique.",
-      "MOBILITÉ : Privilégier le vélo ou la marche à l'ombre pour venir à l'école.",
-      "BIEN-ÊTRE : Noter l'impact positif de la verdure sur la concentration de l'enfant.",
-      "PARTICIPATION : S'impliquer dans l'association des parents pour protéger la cour Oasis.",
-      "SANTÉ : Garder une vigilance sur l'hydratation même quand le ressenti est agréable."
-    ],
-    citoyens: [
-      "VITRINE : Faire de l'école un lieu de visite pour d'autres mairies de la Métropole.",
-      "INSPIRATION : Inciter les riverains à copier les essences d'arbres résilientes.",
-      "RÉSEAU : Intégrer l'école dans la 'Trame Verte' de Bordeaux Métropole.",
-      "FIERTÉ : Valoriser le travail des agents d'entretien et des jardiniers de la ville.",
-      "PARTAGE : Distribuer des graines issues du jardin aux habitants du quartier.",
-      "VEILLE : Signaler toute fuite d'eau ou dépérissement végétal aux abords.",
-      "ÉVÈNEMENT : Organiser une 'Nuit de la Fraîcheur' pour observer la biodiversité nocturne."
-    ]
+    decideurs: ["PÉRENNISATION : Taille douce des arbres pour l'ombre maximale.","SOLS : Compost régulier pour maintenir l'humidité des argiles.","BIODIVERSITÉ : Nichoirs et hôtels à insectes.","VEILLE BÂTI : Inspection annuelle des fondations.","OPTIMISATION : Récupérateurs d'eau de pluie.","CONNECTIVITÉ : Passages pour la petite faune.","MATÉRIAUX : Remplacer les éléments sombres par des tons clairs."],
+    ecole:     ["ÉCOLE DE LA FORÊT : Cours en extérieur pour le bien-être cognitif.","JARDINAGE : Potager avec les enfants.","GESTION EAU : Maintenance des systèmes d'irrigation économes.","TRI : Compostage des déchets de cantine.","OBSERVATION : Relever les températures (effet 'Oasis').","PARTAGE : Accueillir des classes de zones 'Rouges'.","ARCHIVAGE : Carnet de santé de chaque arbre."],
+    familles:  ["ÉDUCATION : Bons réflexes comme habitudes de vie.","NATURE : Sorties en famille dans les parcs.","ÉCO-GESTE : Économie d'eau domestique.","MOBILITÉ : Vélo ou marche à l'ombre.","BIEN-ÊTRE : Impact de la verdure sur la concentration.","PARTICIPATION : S'impliquer dans l'association des parents.","SANTÉ : Vigilance hydratation même par temps agréable."],
+    citoyens:  ["VITRINE : L'école comme lieu de visite pour d'autres mairies.","INSPIRATION : Copier les essences d'arbres résilientes.","RÉSEAU : Intégrer la 'Trame Verte' de Bordeaux Métropole.","FIERTÉ : Valoriser les agents d'entretien et jardiniers.","PARTAGE : Distribuer des graines aux habitants.","VEILLE : Signaler toute fuite ou dépérissement végétal.","ÉVÈNEMENT : 'Nuit de la Fraîcheur' biodiversité nocturne."]
   };
 }
 
-// ─── AFFICHER LE PANNEAU ──────────────────────────────────────────────────────
-function showInfoPanel(name, address, score, props) {
-  const panel   = document.getElementById("info-panel");
-  const content = document.getElementById("info-content");
+// ─── SECTIONS REPLIABLES ─────────────────────────────────────────────────────
+function setupToggle(headerId, containerId, chevronId) {
+  const header    = document.getElementById(headerId);
+  const container = document.getElementById(containerId);
+  const chevron   = document.getElementById(chevronId);
+  let open = true;
 
+  header.addEventListener("click", () => {
+    open = !open;
+    container.classList.toggle("collapsed", !open);
+    chevron.classList.toggle("collapsed", !open);
+  });
+}
+
+setupToggle("toggle-schools", "school-list-container", "chevron-schools");
+setupToggle("toggle-legend",  "legend-container",       "chevron-legend");
+setupToggle("toggle-diag",    "diag-container",          "chevron-diag");
+
+// ─── AFFICHER DIAGNOSTIC ──────────────────────────────────────────────────────
+function showDiagnostic(name, address, score, props) {
+  const container = document.getElementById("diag-container");
   const baro  = getBarometre(score);
   const pct   = Math.round((score / 10) * 100);
   const type  = props ? getSchoolType(props) : "";
@@ -179,55 +94,42 @@ function showInfoPanel(name, address, score, props) {
   const reco  = getRecommandations(score);
 
   const scoreExplain = score >= 7
-    ? "Établissement fortement exposé à la chaleur urbaine. Îlot de chaleur actif, surfaces imperméables dominantes, risque argile potentiel."
+    ? "Établissement fortement exposé à la chaleur urbaine. Îlot de chaleur actif, surfaces imperméables, risque argile potentiel."
     : score >= 4
-    ? "Exposition intermédiaire. Des améliorations ciblées peuvent réduire significativement le risque thermique."
-    : "Environnement végétalisé et frais. Zone 'Oasis' à préserver et à valoriser comme modèle.";
+    ? "Exposition intermédiaire. Des améliorations ciblées réduiront significativement le risque."
+    : "Zone 'Oasis' végétalisée et fraîche. À préserver et valoriser comme modèle.";
 
-  const metaHTML = `
-    <div class="info-meta">
-      ${type ? `<span class="meta-badge type">${type}</span>` : ""}
-      ${op   ? `<span class="meta-badge op">${op}</span>`   : ""}
-    </div>`;
-
-  const contactHTML = (email || web) ? `
-    <div class="info-contact">
-      ${email ? `<a href="mailto:${email}" class="contact-link">✉️ ${email}</a>` : ""}
-      ${web   ? `<a href="${web}" target="_blank" class="contact-link">🌐 Site web</a>` : ""}
-    </div>` : "";
-
-  // Onglets recommandations
   const tabs = [
-    { key: "decideurs", icon: "🏛️", label: "Décideurs",  items: reco.decideurs },
-    { key: "ecole",     icon: "🏫", label: "École",      items: reco.ecole     },
-    { key: "familles",  icon: "👨‍👩‍👧", label: "Familles",  items: reco.familles  },
-    { key: "citoyens",  icon: "🌿", label: "Citoyens",   items: reco.citoyens  },
+    { key: "decideurs", icon: "🏛️", label: "Décideurs", items: reco.decideurs },
+    { key: "ecole",     icon: "🏫", label: "École",     items: reco.ecole     },
+    { key: "familles",  icon: "👨‍👩‍👧", label: "Familles", items: reco.familles  },
+    { key: "citoyens",  icon: "🌿", label: "Citoyens",  items: reco.citoyens  },
   ];
 
-  const tabHeaders = tabs.map((t, i) =>
-    `<button class="tab-btn ${i === 0 ? 'active' : ''}" data-tab="${t.key}">${t.icon} ${t.label}</button>`
-  ).join("");
-
+  const tabHeaders  = tabs.map((t, i) => `<button class="tab-btn ${i===0?'active':''}" data-tab="${t.key}">${t.icon} ${t.label}</button>`).join("");
   const tabContents = tabs.map((t, i) => `
-    <div class="tab-content ${i === 0 ? 'active' : ''}" id="tab-${t.key}">
+    <div class="tab-content ${i===0?'active':''}" id="dtab-${t.key}">
       <ol class="reco-list">
         ${t.items.map(item => {
           const parts = item.split(' : ');
-          if (parts.length > 1) {
-            return `<li><strong>${parts[0]}</strong> : ${parts.slice(1).join(' : ')}</li>`;
-          }
-          return `<li>${item}</li>`;
+          return parts.length > 1
+            ? `<li><strong>${parts[0]}</strong> : ${parts.slice(1).join(' : ')}</li>`
+            : `<li>${item}</li>`;
         }).join("")}
       </ol>
-    </div>
-  `).join("");
+    </div>`).join("");
 
-  content.innerHTML = `
+  container.innerHTML = `
     <div class="info-school">${name}</div>
-    ${metaHTML}
+    <div class="info-meta">
+      ${type ? `<span class="meta-badge type">${type}</span>` : ""}
+      ${op   ? `<span class="meta-badge op">${op}</span>`    : ""}
+    </div>
     <div class="info-address">📍 ${address}</div>
-    ${contactHTML}
-
+    ${(email||web) ? `<div class="info-contact">
+      ${email ? `<a href="mailto:${email}" class="contact-link">✉️ ${email}</a>` : ""}
+      ${web   ? `<a href="${web}" target="_blank" class="contact-link">🌐 Site web</a>` : ""}
+    </div>` : ""}
     <div class="info-score-block" style="background:${baro.bg};border:1px solid ${baro.border}">
       <div class="info-score-top">
         <span class="score-big" style="color:${baro.color}">${score}<span class="score-denom">/10</span></span>
@@ -239,96 +141,147 @@ function showInfoPanel(name, address, score, props) {
       <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%;background:${baro.color}"></div></div>
       <p class="score-explain">${scoreExplain}</p>
     </div>
-
     <div class="reco-section">
       <div class="reco-title">💡 Recommandations par public</div>
       <div class="tab-bar">${tabHeaders}</div>
       <div class="tab-body">${tabContents}</div>
-    </div>
-  `;
+    </div>`;
 
-  // Logique onglets
-  content.querySelectorAll(".tab-btn").forEach(btn => {
+  // Onglets
+  container.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      content.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      content.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      container.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      container.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
       btn.classList.add("active");
-      content.querySelector(`#tab-${btn.dataset.tab}`).classList.add("active");
+      container.querySelector(`#dtab-${btn.dataset.tab}`).classList.add("active");
     });
   });
 
-  panel.classList.remove("hidden");
+  // Ouvrir section diagnostic si repliée
+  const diagContainer = document.getElementById("diag-container");
+  diagContainer.classList.remove("collapsed");
+  document.getElementById("chevron-diag").classList.remove("collapsed");
 }
 
-// Fermer panneau
-document.getElementById("info-close").addEventListener("click", () => {
-  document.getElementById("info-panel").classList.add("hidden");
+// ─── REMPLIR LA LISTE D'ÉCOLES ────────────────────────────────────────────────
+function buildSchoolList(features) {
+  const list = document.getElementById("school-list");
+  list.innerHTML = "";
+
+  if (features.length === 0) {
+    list.innerHTML = `<div class="school-empty">Aucune école trouvée.</div>`;
+    return;
+  }
+
+  features.forEach(f => {
+    const props = f.properties;
+    const nom   = props.nom || props.name || "École sans nom";
+    const score = props.delta || 0;
+    const color = getColor(score);
+    const cls   = getScoreClass(score);
+    const scoreLabel = score >= 7 ? "Rouge" : score >= 4 ? "Moyen" : "Vert";
+
+    const item = document.createElement("div");
+    item.className = "school-item";
+    item.innerHTML = `
+      <div class="school-dot" style="background:${color}"></div>
+      <span class="school-name">${nom}</span>
+      <span class="school-score ${cls}">${scoreLabel} ${score}/10</span>`;
+
+    item.addEventListener("click", () => {
+      const [lon, lat] = f.geometry.coordinates;
+      const addr = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
+      map.flyTo([lat, lon], 16, { animate: true, duration: 1.2 });
+      showDiagnostic(nom, addr, score, props);
+      setTimeout(syncFelt, 1300);
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// ─── FILTRE + BOUTON RECHERCHER ───────────────────────────────────────────────
+document.getElementById("btn-rechercher").addEventListener("click", () => {
+  if (!geoData) return;
+
+  const query  = document.getElementById("search").value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const filter = document.getElementById("filter-type").value;
+
+  const filtered = geoData.features.filter(f => {
+    const nom = (f.properties.nom || f.properties.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const op  = f.properties["operator:type"] || "";
+
+    const matchNom    = query === "" || nom.includes(query);
+    const matchFilter = filter === "tous"
+      || (filter === "public" && op === "public")
+      || (filter === "prive"  && op === "private");
+
+    return matchNom && matchFilter;
+  });
+
+  buildSchoolList(filtered);
+
+  // Ouvrir la liste
+  document.getElementById("school-list-container").classList.remove("collapsed");
+  document.getElementById("chevron-schools").classList.remove("collapsed");
 });
 
 // ─── LOAD GEOJSON ─────────────────────────────────────────────────────────────
 fetch('data.geojson')
-  .then(res => res.json())
+  .then(r => r.json())
   .then(data => {
     geoData = data;
-    console.log("✅ GeoJSON chargé :", data.features.length, "établissements");
+    console.log("✅ GeoJSON :", data.features.length, "établissements");
+    buildSchoolList(data.features);
 
     L.geoJSON(data, {
-      pointToLayer: function (feature, latlng) {
-        const delta = feature.properties.delta || 0;
-        const color = getColor(delta);
-        return L.circleMarker(latlng, {
-          radius: 9, fillColor: color, color: "#fff", weight: 2.5, fillOpacity: 0.95
-        });
+      pointToLayer: (feature, latlng) => {
+        const color = getColor(feature.properties.delta || 0);
+        return L.circleMarker(latlng, { radius: 9, fillColor: color, color: "#fff", weight: 2.5, fillOpacity: 0.95 });
       },
-      onEachFeature: function (feature, layer) {
-        const props  = feature.properties;
-        const nom    = props.nom || props.name || "École sans nom";
-        const score  = props.delta || 0;
-        const addr   = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties;
+        const nom   = props.nom || props.name || "École";
+        const score = props.delta || 0;
+        const addr  = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
+        allMarkers.push({ feature, layer });
 
-        layer.on('click', function () {
-          showInfoPanel(nom, addr, score, props);
+        layer.on('click', () => {
+          showDiagnostic(nom, addr, score, props);
           map.flyTo(layer.getLatLng(), 16, { animate: true, duration: 1.2 });
           setTimeout(syncFelt, 1300);
         });
       }
     }).addTo(map);
   })
-  .catch(err => console.error("❌ Erreur GeoJSON :", err));
+  .catch(e => console.error("❌ GeoJSON :", e));
 
-// ─── SEARCH ──────────────────────────────────────────────────────────────────
+// ─── SEARCH LIVE ─────────────────────────────────────────────────────────────
 const searchInput    = document.getElementById("search");
 const suggestionsBox = document.getElementById("suggestions");
 
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim();
   if (query.length < 2) { suggestionsBox.style.display = "none"; return; }
-
   suggestionsBox.style.display = "block";
   suggestionsBox.innerHTML = `<div class="suggestion-item" style="opacity:.5;cursor:default">Recherche…</div>`;
 
   const results = [];
-
   if (geoData) {
     const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     geoData.features.forEach(f => {
-      const nom = (f.properties.nom || f.properties.name || "")
-        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const nom = (f.properties.nom || f.properties.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       if (nom.includes(q)) results.push({ type: "school", label: f.properties.nom || f.properties.name, feature: f });
     });
   }
-
   try {
-    const res  = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&lat=44.84&lon=-0.58`);
+    const res  = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=4&lat=44.84&lon=-0.58`);
     const data = await res.json();
     data.features.forEach(f => results.push({ type: "address", label: f.properties.label, feature: f }));
-  } catch (e) { console.warn("API adresse :", e); }
+  } catch(e) {}
 
   suggestionsBox.innerHTML = "";
-  if (results.length === 0) {
-    suggestionsBox.innerHTML = `<div class="suggestion-item" style="opacity:.5;cursor:default">Aucun résultat</div>`;
-    return;
-  }
+  if (!results.length) { suggestionsBox.innerHTML = `<div class="suggestion-item" style="opacity:.5;cursor:default">Aucun résultat</div>`; return; }
 
   results.slice(0, 8).forEach(item => {
     const div = document.createElement("div");
@@ -336,10 +289,23 @@ searchInput.addEventListener("input", async () => {
     const badge = item.type === "school"
       ? `<span class="sug-type school">École</span>`
       : `<span class="sug-type address">Adresse</span>`;
-    div.innerHTML = `<span class="sug-icon">${item.type === "school" ? "🏫" : "📍"}</span><span style="flex:1;font-size:13px">${item.label}</span>${badge}`;
+    div.innerHTML = `<span class="sug-icon">${item.type==="school"?"🏫":"📍"}</span><span style="flex:1;font-size:13px">${item.label}</span>${badge}`;
     div.addEventListener("click", () => {
-      if (item.type === "school") selectSchool(item.feature);
-      else                        selectAddress(item.feature);
+      if (item.type === "school") {
+        const f     = item.feature;
+        const props = f.properties;
+        const [lon, lat] = f.geometry.coordinates;
+        const nom   = props.nom || props.name || "École";
+        const score = props.delta || 0;
+        const addr  = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
+        map.flyTo([lat, lon], 17, { animate: true, duration: 1.4 });
+        showDiagnostic(nom, addr, score, props);
+        setTimeout(syncFelt, 1500);
+      } else {
+        const [lon, lat] = item.feature.geometry.coordinates;
+        map.flyTo([lat, lon], 17, { animate: true, duration: 1.4 });
+        setTimeout(syncFelt, 1500);
+      }
       searchInput.value = item.label;
       suggestionsBox.style.display = "none";
     });
@@ -347,44 +313,7 @@ searchInput.addEventListener("input", async () => {
   });
 });
 
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".search-section")) suggestionsBox.style.display = "none";
-});
-
-function selectSchool(feature) {
-  const [lon, lat] = feature.geometry.coordinates;
-  const props = feature.properties;
-  const nom   = props.nom || props.name || "École";
-  const score = props.delta || 0;
-  const addr  = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
-  map.flyTo([lat, lon], 17, { animate: true, duration: 1.4 });
-  if (marker) map.removeLayer(marker);
-  marker = L.marker([lat, lon]).addTo(map);
-  showInfoPanel(nom, addr, score, props);
-  setTimeout(syncFelt, 1500);
-}
-
-function selectAddress(feature) {
-  const [lon, lat] = feature.geometry.coordinates;
-  const label = feature.properties.label;
-  map.flyTo([lat, lon], 17, { animate: true, duration: 1.4 });
-  if (marker) map.removeLayer(marker);
-  marker = L.marker([lat, lon]).addTo(map);
-
-  let closest = null, minDist = Infinity;
-  if (geoData) {
-    geoData.features.forEach(f => {
-      const [fLon, fLat] = f.geometry.coordinates;
-      const dist = Math.hypot(lat - fLat, lon - fLon);
-      if (dist < minDist) { minDist = dist; closest = f; }
-    });
-  }
-  if (closest) {
-    const props = closest.properties;
-    showInfoPanel(`${props.nom || props.name || "École la plus proche"} (école la plus proche)`, label, props.delta || 0, props);
-  }
-  setTimeout(syncFelt, 1500);
-}
+document.addEventListener("click", e => { if (!e.target.closest(".search-section")) suggestionsBox.style.display = "none"; });
 
 // ─── SYNC FELT ────────────────────────────────────────────────────────────────
 const feltLayer = document.getElementById("felt-layer");
