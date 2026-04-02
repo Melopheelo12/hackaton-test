@@ -73,7 +73,7 @@
     <!-- MAP -->
     <main class="map-container">
 
-      <!-- COUCHE 1 : Felt (zones chaleur/fraîcheur) -->
+      <!-- COUCHE 1 : Felt 100% (zones chaleur/fraîcheur) -->
       <iframe
         id="felt-layer"
         width="100%"
@@ -82,25 +82,10 @@
         src="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.84,-0.58,12z&legend=0&link=1&geolocation=0&cooperativeGestures=1"
       ></iframe>
 
-      <!-- COUCHE 2 : Leaflet satellite + marqueurs interactifs -->
+      <!-- COUCHE 2 : Leaflet transparent (marqueurs interactifs uniquement) -->
       <div id="map"></div>
 
-      <!-- Attribution -->
-      <div class="map-badge">© Esri · OpenStreetMap · Éducation nationale</div>
-
-      <!-- Contrôles opacité -->
-      <div id="layer-controls">
-        <div class="layer-row">
-          <span class="layer-label">🛰️ Carte satellite</span>
-          <input type="range" id="op-leaflet" min="10" max="100" value="100" step="1">
-          <span class="op-val" id="lf-val">100%</span>
-        </div>
-        <div class="layer-row">
-          <span class="layer-label">🌡️ Zones Felt</span>
-          <input type="range" id="op-felt" min="0" max="100" value="55" step="1">
-          <span class="op-val" id="ft-val">55%</span>
-        </div>
-      </div>
+      <div class="map-badge">© OpenStreetMap · Felt · Éducation nationale</div>
 
     </main>
   </div>
