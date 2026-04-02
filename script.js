@@ -95,7 +95,6 @@ fetch('data.geojson')
         const color  = getColor(score);
         const addr   = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
 
-        // Popup Leaflet stylée
         layer.bindPopup(`
           <div class="popup-name">${nom}</div>
           <div class="popup-type">${type}</div>
@@ -105,17 +104,17 @@ fetch('data.geojson')
           </div>
         `, { maxWidth: 240 });
 
-        // Clic → afficher dans la sidebar + zoom
         layer.on('click', function () {
           displayResult(nom, addr, score);
           map.flyTo(layer.getLatLng(), 16, { animate: true, duration: 1.2 });
+          setTimeout(syncFelt, 1300);
         });
       }
     }).addTo(map);
   });
 
 // ─── SEARCH ──────────────────────────────────────────────────────────────────
-const searchInput   = document.getElementById("search");
+const searchInput    = document.getElementById("search");
 const suggestionsBox = document.getElementById("suggestions");
 
 searchInput.addEventListener("input", async () => {
@@ -132,7 +131,6 @@ searchInput.addEventListener("input", async () => {
 
   const results = [];
 
-  // ① Chercher dans les écoles du GeoJSON
   if (geoData) {
     const q = query.toLowerCase();
     geoData.features.forEach(f => {
@@ -143,7 +141,6 @@ searchInput.addEventListener("input", async () => {
     });
   }
 
-  // ② Chercher dans l'API adresse (adresses réelles)
   try {
     const res = await fetch(
       `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=4&citycode=33063`
@@ -152,7 +149,7 @@ searchInput.addEventListener("input", async () => {
     data.features.forEach(f => {
       results.push({ type: "address", label: f.properties.label, feature: f });
     });
-  } catch (e) { /* API down, ignorer */ }
+  } catch (e) {}
 
   suggestionsBox.innerHTML = "";
 
@@ -165,7 +162,7 @@ searchInput.addEventListener("input", async () => {
     const div = document.createElement("div");
     div.className = "suggestion-item";
 
-    const icon = item.type === "school" ? "🏫" : "📍";
+    const icon  = item.type === "school" ? "🏫" : "📍";
     const badge = item.type === "school"
       ? `<span class="sug-type school">École</span>`
       : `<span class="sug-type address">Adresse</span>`;
@@ -186,7 +183,6 @@ searchInput.addEventListener("input", async () => {
   });
 });
 
-// Fermer suggestions au clic dehors
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".search-section")) {
     suggestionsBox.style.display = "none";
@@ -205,6 +201,7 @@ function selectSchool(feature) {
   if (marker) map.removeLayer(marker);
   marker = L.marker([lat, lon]).addTo(map);
   displayResult(nom, addr, score);
+  setTimeout(syncFelt, 1500);
 }
 
 // ─── SÉLECTIONNER UNE ADRESSE ─────────────────────────────────────────────────
@@ -216,9 +213,8 @@ function selectAddress(feature) {
   if (marker) map.removeLayer(marker);
   marker = L.marker([lat, lon]).addTo(map);
 
-  // Trouver l'école la plus proche
   let closest = null;
-  let minDist = Infinity;
+  let minDist  = Infinity;
 
   if (geoData) {
     geoData.features.forEach(f => {
@@ -229,14 +225,14 @@ function selectAddress(feature) {
   }
 
   if (closest) {
-    const props  = closest.properties;
-    const nom    = props.nom || props.name || "École la plus proche";
-    const score  = props.delta || 0;
-    const addr   = label;
-    displayResult(`${nom} (école la plus proche)`, addr, score);
+    const props = closest.properties;
+    const nom   = props.nom || props.name || "École la plus proche";
+    const score = props.delta || 0;
+    displayResult(`${nom} (école la plus proche)`, label, score);
   }
+
+  setTimeout(syncFelt, 1500);
 }
-// ─── TOGGLE FELT OVERLAY ─────────────────────
 
 // ─── SYNC FELT QUAND LA CARTE BOUGE ──────────────────────────────────────────
 const feltLayer = document.getElementById("felt-layer");
