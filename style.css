@@ -312,6 +312,3 @@ input[type=range] {
     min-height: 300px;
   }
 }
-.leaflet-container { background: transparent !important; }
-.leaflet-tile-pane { display: none !important; }
-
