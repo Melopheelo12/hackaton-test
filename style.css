@@ -16,7 +16,7 @@
   --font-body: 'DM Sans', sans-serif;
 
   --radius: 14px;
-  --sidebar-w: 370px;
+  --sidebar-w: 300px;
 }
 
 html, body { height: 100%; overflow: hidden; }
@@ -37,7 +37,7 @@ body {
 }
 
 /* =============================================
-   SIDEBAR
+   SIDEBAR (légère, juste search + légende)
    ============================================= */
 .sidebar {
   width: var(--sidebar-w);
@@ -65,12 +65,12 @@ body {
 }
 
 .brand-icon {
-  font-size: 26px;
+  font-size: 24px;
   background: linear-gradient(135deg, #fef3c7, #dbeafe);
   border: 1px solid var(--border);
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,13 +78,13 @@ body {
 
 .brand-title {
   font-family: var(--font-head);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--text);
 }
 
 .brand-sub {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: .05em;
@@ -123,7 +123,7 @@ body {
   box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
 
-.search-icon { font-size: 15px; margin-right: 6px; }
+.search-icon { font-size: 14px; margin-right: 6px; }
 
 #search {
   flex: 1;
@@ -131,8 +131,8 @@ body {
   border: none;
   outline: none;
   color: var(--text);
-  font-size: 14px;
-  padding: 12px 0;
+  font-size: 13px;
+  padding: 11px 0;
   font-family: var(--font-body);
 }
 
@@ -169,11 +169,11 @@ body {
 .suggestion-item:last-child { border-bottom: none; }
 .suggestion-item:hover { background: var(--surface2); }
 
-.sug-icon { font-size: 14px; }
+.sug-icon { font-size: 13px; }
 
 .sug-type {
   font-size: 10px;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 5px;
   font-weight: 600;
   white-space: nowrap;
@@ -205,8 +205,8 @@ body {
 .legend-item p      { font-size: 11px; color: var(--text-muted); margin: 0; }
 
 .dot {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
   border: 2px solid rgba(0,0,0,0.12);
@@ -217,45 +217,115 @@ body {
 .dot-red    { background: #dc2626; }
 
 /* =============================================
-   RESULT CARD
+   SIDEBAR PLACEHOLDER
    ============================================= */
-.result-card {
-  border-radius: var(--radius);
-  padding: 16px;
-  border: 1px solid var(--border);
+.sidebar-placeholder {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 20px 10px;
   background: var(--surface2);
+  border-radius: 10px;
+  border: 1px dashed var(--border);
 }
 
-.result-default {
+.sidebar-placeholder span { font-size: 22px; display: block; margin-bottom: 8px; }
+
+/* =============================================
+   MAP
+   ============================================= */
+.map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Felt 100% en dessous */
+#felt-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* Leaflet transparent par-dessus — marqueurs seulement */
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  background: transparent !important;
+}
+
+.leaflet-container  { background: transparent !important; }
+.leaflet-tile-pane  { opacity: 0 !important; }
+
+/* =============================================
+   PANNEAU INFO FLOTTANT SUR LA CARTE
+   ============================================= */
+.info-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 340px;
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  z-index: 999;
+  padding: 18px;
+  transition: opacity .25s, transform .25s;
+}
+
+.info-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+
+.info-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 110px;
+  transition: background .15s;
 }
 
-.result-placeholder {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
+.info-close:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 
-.result-placeholder span { font-size: 26px; display: block; margin-bottom: 8px; }
-
-.result-card.is-red    { border-color: #fca5a5; background: #fff5f5; }
-.result-card.is-orange { border-color: #fcd34d; background: #fffbeb; }
-.result-card.is-green  { border-color: #86efac; background: #f0fdf4; }
-
-.result-school {
+/* Contenu du panneau */
+.info-school {
   font-family: var(--font-head);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 5px;
+  padding-right: 30px;
   line-height: 1.3;
 }
 
-.result-meta {
+.info-meta {
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
@@ -272,13 +342,13 @@ body {
 .meta-badge.type { background: #dbeafe; color: #1d4ed8; }
 .meta-badge.op   { background: #f3f4f6; color: #374151; }
 
-.result-address {
+.info-address {
   font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 4px;
 }
 
-.result-contact {
+.info-contact {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -294,14 +364,18 @@ body {
 
 .contact-link:hover { text-decoration: underline; }
 
-.result-score-block {
-  background: rgba(0,0,0,0.04);
+/* Bloc score */
+.info-score-block {
   border-radius: 10px;
   padding: 12px;
   margin: 10px 0 12px;
 }
 
-.result-score-top {
+.info-score-block.is-red    { background: #fff5f5; border: 1px solid #fca5a5; }
+.info-score-block.is-orange { background: #fffbeb; border: 1px solid #fcd34d; }
+.info-score-block.is-green  { background: #f0fdf4; border: 1px solid #86efac; }
+
+.info-score-top {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -309,7 +383,7 @@ body {
 }
 
 .score-big {
-  font-size: 42px;
+  font-size: 44px;
   font-weight: 800;
   line-height: 1;
   font-family: var(--font-head);
@@ -334,13 +408,13 @@ body {
 .score-bar {
   background: rgba(0,0,0,0.1);
   border-radius: 6px;
-  height: 7px;
+  height: 6px;
   margin-bottom: 9px;
   overflow: hidden;
 }
 
 .score-bar-fill {
-  height: 7px;
+  height: 6px;
   border-radius: 6px;
   transition: width .5s ease;
 }
@@ -351,7 +425,7 @@ body {
   line-height: 1.5;
 }
 
-.result-section-title {
+.info-section-title {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
@@ -360,14 +434,14 @@ body {
   margin-bottom: 7px;
 }
 
-.result-advice-list {
+.info-advice-list {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.result-advice-list li {
+.info-advice-list li {
   font-size: 12px;
   color: var(--text);
   line-height: 1.5;
@@ -376,42 +450,6 @@ body {
   border-radius: 7px;
   border-left: 3px solid rgba(0,0,0,0.12);
 }
-
-/* =============================================
-   MAP
-   ============================================= */
-.map-container {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Felt en plein écran, 100% opaque */
-#felt-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  z-index: 1;
-  opacity: 1;
-  pointer-events: none;
-}
-
-/* Leaflet par-dessus, transparent (tuiles cachées, marqueurs visibles) */
-#map {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  background: transparent !important;
-}
-
-.leaflet-container { background: transparent !important; }
-.leaflet-tile-pane { opacity: 0 !important; }
 
 /* =============================================
    MAP BADGE
@@ -431,36 +469,9 @@ body {
 }
 
 /* =============================================
-   LEAFLET POPUP
+   LEAFLET POPUP masqué (on utilise info-panel)
    ============================================= */
-.leaflet-popup-content-wrapper {
-  background: #ffffff !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(0,0,0,0.1) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.15) !important;
-}
-
-.leaflet-popup-tip { background: #ffffff !important; }
-
-.popup-name {
-  font-family: var(--font-head);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 2px;
-}
-
-.popup-type {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-.popup-score-num {
-  font-size: 22px;
-  font-weight: 800;
-}
+.leaflet-popup { display: none !important; }
 
 /* =============================================
    RESPONSIVE
@@ -469,4 +480,75 @@ body {
   .app-wrapper   { flex-direction: column; }
   .sidebar       { width: 100%; height: auto; min-width: unset; }
   .map-container { min-height: 350px; }
+  .info-panel    { width: calc(100% - 32px); }
+}
+
+/* =============================================
+   ONGLETS RECOMMANDATIONS
+   ============================================= */
+.reco-section { margin-top: 4px; }
+
+.reco-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tab-btn {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover { background: #e0e7ff; color: #3730a3; border-color: #a5b4fc; }
+
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.reco-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+}
+
+.reco-list li {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+  padding: 7px 10px 7px 14px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 7px;
+  border-left: 3px solid var(--accent);
+  counter-increment: reco-counter;
+}
+
+.reco-list li strong {
+  color: var(--text);
+  font-weight: 700;
 }
