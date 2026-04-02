@@ -5,8 +5,9 @@ const map = L.map('map', { zoomControl: false }).setView([44.84, -0.58], 12);
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO',
+// Fond satellite Esri
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: '&copy; Esri &copy; OpenStreetMap',
   maxZoom: 19
 }).addTo(map);
 
@@ -22,50 +23,103 @@ function getColor(delta) {
 
 // ─── TYPE D'ÉTABLISSEMENT ─────────────────────────────────────────────────────
 function getSchoolType(props) {
-  const amenity = props.amenity || "";
+  const amenity  = props.amenity || "";
   const schoolFR = props["school:FR"] || "";
-  if (amenity === "kindergarten") return "Crèche / Maternelle";
-  if (schoolFR.includes("lycée"))    return "Lycée";
-  if (schoolFR.includes("collège"))  return "Collège";
-  if (schoolFR.includes("maternelle")) return "École maternelle";
-  if (schoolFR.includes("élémentaire") || schoolFR.includes("primaire")) return "École primaire";
-  return "Établissement scolaire";
+  if (amenity === "kindergarten")                                          return "🍼 Crèche / Maternelle";
+  if (schoolFR.includes("lycée"))                                          return "🎓 Lycée";
+  if (schoolFR.includes("collège"))                                        return "📚 Collège";
+  if (schoolFR.includes("maternelle"))                                     return "🌱 École maternelle";
+  if (schoolFR.includes("élémentaire") || schoolFR.includes("primaire"))  return "✏️ École primaire";
+  return "🏫 Établissement scolaire";
 }
 
-// ─── AFFICHER UN RÉSULTAT DANS LA SIDEBAR ────────────────────────────────────
-function displayResult(name, address, score) {
+function getOperatorLabel(props) {
+  const op = props["operator:type"] || "";
+  if (op === "public")  return "🏛️ Public";
+  if (op === "private") return "🏢 Privé";
+  return null;
+}
+
+function getRisk(score) {
+  if (score >= 7) return { cls: "is-red",    icon: "🔴", label: "Risque ÉLEVÉ",  color: "#e74c3c", bar: "#dc2626" };
+  if (score >= 4) return { cls: "is-orange", icon: "🟠", label: "Risque MODÉRÉ", color: "#f39c12", bar: "#d97706" };
+  return              { cls: "is-green",  icon: "🟢", label: "Risque FAIBLE", color: "#2ecc71", bar: "#16a34a" };
+}
+
+function getAdvice(score) {
+  if (score >= 7) return [
+    "Désimperméabiliser les cours (pavés drainants, engazonnement)",
+    "Planter des arbres à grand développement pour créer de l'ombre",
+    "Installer des brumisateurs ou points d'eau pour les élèves",
+    "Végétaliser les toitures et façades (murs végétaux)",
+    "Prévoir un plan de continuité pédagogique lors des canicules"
+  ];
+  if (score >= 4) return [
+    "Ajouter des dispositifs d'ombrage (voiles, pergolas) en cour",
+    "Végétaliser les façades les plus exposées au soleil",
+    "Réduire les surfaces minérales (asphalte, béton) en cour",
+    "Renforcer la canopée existante avec de nouvelles plantations"
+  ];
+  return [
+    "Maintenir et entretenir la végétation existante",
+    "Surveiller l'évolution du bâti aux alentours",
+    "Continuer les bonnes pratiques de gestion thermique"
+  ];
+}
+
+// ─── AFFICHER RÉSULTAT SIDEBAR ────────────────────────────────────────────────
+function displayResult(name, address, score, props) {
   const resultBox = document.getElementById("result");
+  const risk      = getRisk(score);
+  const pct       = Math.round((score / 10) * 100);
+  const type      = props ? getSchoolType(props) : "";
+  const op        = props ? getOperatorLabel(props) : null;
+  const email     = props && props.email ? props.email : null;
+  const website   = props && props.website ? props.website : null;
+  const advices   = getAdvice(score);
 
-  let cls, level, advice;
+  const metaHTML = `
+    <div class="result-meta">
+      ${type ? `<span class="meta-badge type">${type}</span>` : ""}
+      ${op   ? `<span class="meta-badge op">${op}</span>`   : ""}
+    </div>`;
 
-  if (score >= 7) {
-    cls    = "is-red";
-    level  = "🔴 Risque ÉLEVÉ";
-    advice = "Zone très exposée à la chaleur. Priorité à la désimperméabilisation, à la plantation d'arbres et à la création d'îlots de fraîcheur.";
-  } else if (score >= 4) {
-    cls    = "is-orange";
-    level  = "🟠 Risque MODÉRÉ";
-    advice = "Zone vulnérable. Prévoir des dispositifs d'ombrage, végétaliser les façades et limiter les surfaces minérales.";
-  } else {
-    cls    = "is-green";
-    level  = "🟢 Risque FAIBLE";
-    advice = "Zone relativement protégée. Maintenir et renforcer la canopée existante.";
-  }
+  const contactHTML = (email || website) ? `
+    <div class="result-contact">
+      ${email   ? `<a href="mailto:${email}" class="contact-link">✉️ ${email}</a>` : ""}
+      ${website ? `<a href="${website}" target="_blank" class="contact-link">🌐 Site web</a>` : ""}
+    </div>` : "";
 
-  const pct = Math.round((score / 10) * 100);
+  const adviceHTML = advices.map(a => `<li>${a}</li>`).join("");
 
-  resultBox.className = `result-card ${cls}`;
+  // Explication du score
+  const scoreExplain = score >= 7
+    ? "Cet établissement est situé dans une zone fortement exposée à la chaleur urbaine (îlot de chaleur, manque de végétation, surfaces imperméables)."
+    : score >= 4
+    ? "Cet établissement présente une exposition intermédiaire. Des améliorations ciblées peuvent réduire significativement le risque."
+    : "Cet établissement bénéficie d'un environnement relativement végétalisé et frais. La vigilance reste de mise lors des canicules.";
+
+  resultBox.className = `result-card ${risk.cls}`;
   resultBox.innerHTML = `
     <div class="result-school">${name}</div>
-    <div class="result-address">${address}</div>
-    <div class="result-score">
-      <span class="popup-score-num score-badge">${score}<span style="font-size:14px;opacity:.5">/10</span></span>
-      <span class="score-label">${level}</span>
+    ${metaHTML}
+    <div class="result-address">📍 ${address}</div>
+    ${contactHTML}
+
+    <div class="result-score-block">
+      <div class="result-score-top">
+        <span class="score-big" style="color:${risk.color}">${score}<span class="score-denom">/10</span></span>
+        <div class="score-info">
+          <span class="score-level">${risk.icon} ${risk.label}</span>
+          <span class="score-sub">Indice d'exposition chaleur urbaine</span>
+        </div>
+      </div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%;background:${risk.bar}"></div></div>
+      <p class="score-explain">${scoreExplain}</p>
     </div>
-    <div class="score-bar">
-      <div class="score-bar-fill" style="width:${pct}%"></div>
-    </div>
-    <div class="result-advice">💡 ${advice}</div>
+
+    <div class="result-section-title">💡 Recommandations</div>
+    <ul class="result-advice-list">${adviceHTML}</ul>
   `;
 }
 
@@ -80,10 +134,10 @@ fetch('data.geojson')
         const delta = feature.properties.delta || 0;
         const color = getColor(delta);
         return L.circleMarker(latlng, {
-          radius: 7,
+          radius: 8,
           fillColor: color,
           color: "#fff",
-          weight: 1.5,
+          weight: 2,
           fillOpacity: 0.92
         });
       },
@@ -93,6 +147,7 @@ fetch('data.geojson')
         const score  = props.delta || 0;
         const type   = getSchoolType(props);
         const color  = getColor(score);
+        const risk   = getRisk(score);
         const addr   = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
 
         layer.bindPopup(`
@@ -100,12 +155,12 @@ fetch('data.geojson')
           <div class="popup-type">${type}</div>
           <div class="popup-score">
             <span class="popup-score-num" style="color:${color}">${score}</span>
-            <span style="color:#8a92a6;font-size:12px">/ 10 · Score chaleur</span>
+            <span style="color:#666;font-size:12px"> / 10 · ${risk.icon} ${risk.label}</span>
           </div>
-        `, { maxWidth: 240 });
+        `, { maxWidth: 260 });
 
         layer.on('click', function () {
-          displayResult(nom, addr, score);
+          displayResult(nom, addr, score, props);
           map.flyTo(layer.getLatLng(), 16, { animate: true, duration: 1.2 });
           setTimeout(syncFelt, 1300);
         });
@@ -121,16 +176,16 @@ searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim();
 
   if (query.length < 2) {
-    suggestionsBox.innerHTML = "";
+    suggestionsBox.innerHTML   = "";
     suggestionsBox.style.display = "none";
     return;
   }
 
-  suggestionsBox.innerHTML = "";
   suggestionsBox.style.display = "block";
 
   const results = [];
 
+  // ① Écoles du GeoJSON
   if (geoData) {
     const q = query.toLowerCase();
     geoData.features.forEach(f => {
@@ -141,15 +196,18 @@ searchInput.addEventListener("input", async () => {
     });
   }
 
+  // ② API adresse — Bordeaux + communes voisines (pas de filtre citycode trop restrictif)
   try {
-    const res = await fetch(
-      `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=4&citycode=33063`
+    const res  = await fetch(
+      `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&lat=44.84&lon=-0.58`
     );
     const data = await res.json();
     data.features.forEach(f => {
       results.push({ type: "address", label: f.properties.label, feature: f });
     });
-  } catch (e) {}
+  } catch (e) {
+    console.warn("API adresse indisponible", e);
+  }
 
   suggestionsBox.innerHTML = "";
 
@@ -159,9 +217,8 @@ searchInput.addEventListener("input", async () => {
   }
 
   results.slice(0, 8).forEach(item => {
-    const div = document.createElement("div");
+    const div   = document.createElement("div");
     div.className = "suggestion-item";
-
     const icon  = item.type === "school" ? "🏫" : "📍";
     const badge = item.type === "school"
       ? `<span class="sug-type school">École</span>`
@@ -169,20 +226,21 @@ searchInput.addEventListener("input", async () => {
 
     div.innerHTML = `<span class="sug-icon">${icon}</span><span style="flex:1;font-size:13px">${item.label}</span>${badge}`;
 
-    div.onclick = () => {
+    div.addEventListener("click", () => {
       if (item.type === "school") {
         selectSchool(item.feature);
       } else {
         selectAddress(item.feature);
       }
-      searchInput.value = item.label;
+      searchInput.value          = item.label;
       suggestionsBox.style.display = "none";
-    };
+    });
 
     suggestionsBox.appendChild(div);
   });
 });
 
+// Fermer suggestions au clic dehors
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".search-section")) {
     suggestionsBox.style.display = "none";
@@ -192,30 +250,30 @@ document.addEventListener("click", (e) => {
 // ─── SÉLECTIONNER UNE ÉCOLE ───────────────────────────────────────────────────
 function selectSchool(feature) {
   const [lon, lat] = feature.geometry.coordinates;
-  const props  = feature.properties;
-  const nom    = props.nom || props.name || "École";
-  const score  = props.delta || 0;
-  const addr   = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
+  const props      = feature.properties;
+  const nom        = props.nom || props.name || "École";
+  const score      = props.delta || 0;
+  const addr       = [props["addr:housenumber"], props["addr:street"]].filter(Boolean).join(" ") || "Bordeaux";
 
   map.flyTo([lat, lon], 17, { animate: true, duration: 1.4 });
   if (marker) map.removeLayer(marker);
   marker = L.marker([lat, lon]).addTo(map);
-  displayResult(nom, addr, score);
+  displayResult(nom, addr, score, props);
   setTimeout(syncFelt, 1500);
 }
 
 // ─── SÉLECTIONNER UNE ADRESSE ─────────────────────────────────────────────────
 function selectAddress(feature) {
   const [lon, lat] = feature.geometry.coordinates;
-  const label = feature.properties.label;
+  const label      = feature.properties.label;
 
   map.flyTo([lat, lon], 17, { animate: true, duration: 1.4 });
   if (marker) map.removeLayer(marker);
   marker = L.marker([lat, lon]).addTo(map);
 
+  // École la plus proche
   let closest = null;
   let minDist  = Infinity;
-
   if (geoData) {
     geoData.features.forEach(f => {
       const [fLon, fLat] = f.geometry.coordinates;
@@ -228,7 +286,7 @@ function selectAddress(feature) {
     const props = closest.properties;
     const nom   = props.nom || props.name || "École la plus proche";
     const score = props.delta || 0;
-    displayResult(`${nom} (école la plus proche)`, label, score);
+    displayResult(`${nom} (école la plus proche)`, label, score, props);
   }
 
   setTimeout(syncFelt, 1500);
