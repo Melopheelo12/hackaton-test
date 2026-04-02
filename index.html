@@ -3,131 +3,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Résilience Bordeaux · Diagnostic Chaleur</title>
+  <title>Sentinelle · Bordeaux</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-wrapper">
+<div class="app-wrapper">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+  <!-- ─── SIDEBAR ─────────────────────────────── -->
+  <aside class="sidebar">
 
-      <div class="brand">
-        <span class="brand-icon">🌿</span>
-        <div>
-          <div class="brand-title">Sentinelle</div>
-          <div class="brand-sub">Bordeaux · Diagnostic Chaleur</div>
-        </div>
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-icon">🌿</div>
+      <div>
+        <div class="brand-title">Sentinelle</div>
+        <div class="brand-sub">Bordeaux · Diagnostic Chaleur</div>
+      </div>
+    </div>
+
+    <!-- Recherche + Filtre -->
+    <div class="search-section">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Nom d'école ou adresse…" autocomplete="off">
       </div>
 
-      <!-- SEARCH + FILTRE -->
-      <div class="search-section">
-        <label class="section-label">Rechercher</label>
-        <div class="search-wrapper">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search" placeholder="Nom d'école ou adresse…" autocomplete="off">
-        </div>
-        <div id="suggestions" class="suggestions"></div>
-
-        <!-- Filtre public/privé -->
-        <div class="filter-row">
-          <select id="filter-type" class="filter-select">
-            <option value="tous">🏫 Tous les établissements</option>
-            <option value="public">🏛️ Public uniquement</option>
-            <option value="prive">🏢 Privé uniquement</option>
-          </select>
-        </div>
-
-        <button id="btn-rechercher" class="btn-rechercher">Rechercher</button>
+      <div class="filter-wrapper">
+        <select id="filter-type" class="filter-select">
+          <option value="tous">🏫 Tous les établissements</option>
+          <option value="public">🏛️ Public uniquement</option>
+          <option value="prive">🏢 Privé uniquement</option>
+        </select>
+        <span class="filter-arrow">▾</span>
       </div>
 
-      <!-- LISTE ÉCOLES -->
-      <div class="school-list-section">
-        <div class="section-header" id="toggle-schools">
-          <label class="section-label" style="margin:0">🏫 Écoles</label>
-          <span class="chevron" id="chevron-schools">▾</span>
+      <div id="filter-badge" class="filter-badge"></div>
+
+      <button id="btn-rechercher" class="btn-rechercher">
+        <span>🔎</span> Rechercher
+      </button>
+
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+
+    <!-- Écoles -->
+    <div class="section-block">
+      <div class="section-header" id="toggle-schools">
+        <div class="section-header-left">
+          <span class="section-icon">🏫</span>
+          <span class="section-label">Écoles</span>
+          <span class="section-count" id="school-count">0</span>
         </div>
-        <div id="school-list-container">
-          <div id="school-list" class="school-list">
-            <!-- rempli par JS -->
+        <span class="chevron" id="chevron-schools">▾</span>
+      </div>
+      <div class="section-content" id="school-list-container">
+        <div class="school-list" id="school-list">
+          <div class="school-empty">Chargement…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="section-block">
+      <div class="section-header" id="toggle-legend">
+        <div class="section-header-left">
+          <span class="section-icon">🗺️</span>
+          <span class="section-label">Légende</span>
+        </div>
+        <span class="chevron" id="chevron-legend">▾</span>
+      </div>
+      <div class="section-content" id="legend-container">
+        <div class="legend-items">
+          <div class="legend-item">
+            <span class="dot dot-green"></span>
+            <div><strong>Risque faible (0–3)</strong><p>Zone végétalisée, fraîche</p></div>
+          </div>
+          <div class="legend-item">
+            <span class="dot dot-orange"></span>
+            <div><strong>Risque modéré (4–6)</strong><p>Exposition intermédiaire</p></div>
+          </div>
+          <div class="legend-item">
+            <span class="dot dot-red"></span>
+            <div><strong>Risque élevé (7–10)</strong><p>Forte exposition chaleur</p></div>
+          </div>
+        </div>
+        <div class="legend-gradient">
+          <div class="gradient-bar"></div>
+          <div class="gradient-labels">
+            <span>Zone de chaleur</span>
+            <span>Zone de fraîcheur</span>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- LÉGENDE -->
-      <div class="legend-section">
-        <div class="section-header" id="toggle-legend">
-          <label class="section-label" style="margin:0">🗺️ Légende</label>
-          <span class="chevron" id="chevron-legend">▾</span>
+    <!-- Diagnostic -->
+    <div class="section-block">
+      <div class="section-header" id="toggle-diag">
+        <div class="section-header-left">
+          <span class="section-icon">📊</span>
+          <span class="section-label">Diagnostic</span>
         </div>
-        <div id="legend-container">
-          <div class="legend-items">
-            <div class="legend-item">
-              <span class="dot dot-green"></span>
-              <div>
-                <strong>Risque faible (0–3)</strong>
-                <p>Zone végétalisée, fraîche</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <span class="dot dot-orange"></span>
-              <div>
-                <strong>Risque modéré (4–6)</strong>
-                <p>Exposition intermédiaire</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <span class="dot dot-red"></span>
-              <div>
-                <strong>Risque élevé (7–10)</strong>
-                <p>Forte exposition à la chaleur</p>
-              </div>
-            </div>
-          </div>
-          <div class="legend-gradient">
-            <div class="gradient-bar"></div>
-            <div class="gradient-labels">
-              <span>Zone de chaleur</span>
-              <span>Zone de fraîcheur</span>
-            </div>
-          </div>
+        <span class="chevron" id="chevron-diag">▾</span>
+      </div>
+      <div class="section-content" id="diag-container">
+        <div class="diag-placeholder">
+          <span>👆</span>
+          <p>Cliquez sur une école ou sur un marqueur pour afficher son diagnostic.</p>
         </div>
       </div>
+    </div>
 
-      <!-- DIAGNOSTIC -->
-      <div class="diag-section">
-        <div class="section-header" id="toggle-diag">
-          <label class="section-label" style="margin:0">📊 Diagnostic</label>
-          <span class="chevron" id="chevron-diag">▾</span>
-        </div>
-        <div id="diag-container">
-          <div class="diag-placeholder">
-            <span>👆</span>
-            <p>Cliquez sur une école pour afficher son diagnostic.</p>
-          </div>
-        </div>
-      </div>
+  </aside>
 
-    </aside>
+  <!-- ─── MAP ──────────────────────────────────── -->
+  <main class="map-container">
+    <iframe
+      id="felt-layer"
+      width="100%" height="100%" frameborder="0"
+      src="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.84,-0.58,12z&legend=0&link=1&geolocation=0&cooperativeGestures=1"
+    ></iframe>
+    <div id="map"></div>
+    <div class="map-badge">© OpenStreetMap · Felt · Éducation nationale</div>
+  </main>
 
-    <!-- MAP -->
-    <main class="map-container">
-      <iframe
-        id="felt-layer"
-        width="100%"
-        height="100%"
-        frameborder="0"
-        src="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.84,-0.58,12z&legend=0&link=1&geolocation=0&cooperativeGestures=1"
-      ></iframe>
-      <div id="map"></div>
-      <div class="map-badge">© OpenStreetMap · Felt · Éducation nationale</div>
-    </main>
-
-  </div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
