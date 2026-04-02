@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sentinel Bordeaux · Diagnostic Chaleur</title>
+  <title>Résilience Bordeaux · Diagnostic Chaleur</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -15,56 +15,98 @@
     <aside class="sidebar">
 
       <div class="brand">
-        <span class="brand-icon">🌡️</span>
+        <span class="brand-icon">🌿</span>
         <div>
-          <div class="brand-title">Sentinel</div>
+          <div class="brand-title">Sentinelle</div>
           <div class="brand-sub">Bordeaux · Diagnostic Chaleur</div>
         </div>
       </div>
 
-      <!-- SEARCH -->
+      <!-- SEARCH + FILTRE -->
       <div class="search-section">
         <label class="section-label">Rechercher</label>
         <div class="search-wrapper">
           <span class="search-icon">🔍</span>
-          <input type="text" id="search" placeholder="Adresse ou nom d'école…" autocomplete="off">
+          <input type="text" id="search" placeholder="Nom d'école ou adresse…" autocomplete="off">
         </div>
         <div id="suggestions" class="suggestions"></div>
+
+        <!-- Filtre public/privé -->
+        <div class="filter-row">
+          <select id="filter-type" class="filter-select">
+            <option value="tous">🏫 Tous les établissements</option>
+            <option value="public">🏛️ Public uniquement</option>
+            <option value="prive">🏢 Privé uniquement</option>
+          </select>
+        </div>
+
+        <button id="btn-rechercher" class="btn-rechercher">Rechercher</button>
       </div>
 
-      <!-- LEGEND -->
+      <!-- LISTE ÉCOLES -->
+      <div class="school-list-section">
+        <div class="section-header" id="toggle-schools">
+          <label class="section-label" style="margin:0">🏫 Écoles</label>
+          <span class="chevron" id="chevron-schools">▾</span>
+        </div>
+        <div id="school-list-container">
+          <div id="school-list" class="school-list">
+            <!-- rempli par JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- LÉGENDE -->
       <div class="legend-section">
-        <label class="section-label">Légende</label>
-        <div class="legend-items">
-          <div class="legend-item">
-            <span class="dot dot-green"></span>
-            <div>
-              <strong>Risque faible (0–3)</strong>
-              <p>Zone végétalisée, fraîche</p>
+        <div class="section-header" id="toggle-legend">
+          <label class="section-label" style="margin:0">🗺️ Légende</label>
+          <span class="chevron" id="chevron-legend">▾</span>
+        </div>
+        <div id="legend-container">
+          <div class="legend-items">
+            <div class="legend-item">
+              <span class="dot dot-green"></span>
+              <div>
+                <strong>Risque faible (0–3)</strong>
+                <p>Zone végétalisée, fraîche</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="dot dot-orange"></span>
+              <div>
+                <strong>Risque modéré (4–6)</strong>
+                <p>Exposition intermédiaire</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="dot dot-red"></span>
+              <div>
+                <strong>Risque élevé (7–10)</strong>
+                <p>Forte exposition à la chaleur</p>
+              </div>
             </div>
           </div>
-          <div class="legend-item">
-            <span class="dot dot-orange"></span>
-            <div>
-              <strong>Risque modéré (4–6)</strong>
-              <p>Exposition intermédiaire</p>
-            </div>
-          </div>
-          <div class="legend-item">
-            <span class="dot dot-red"></span>
-            <div>
-              <strong>Risque élevé (7–10)</strong>
-              <p>Forte exposition à la chaleur</p>
+          <div class="legend-gradient">
+            <div class="gradient-bar"></div>
+            <div class="gradient-labels">
+              <span>Zone de chaleur</span>
+              <span>Zone de fraîcheur</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- RESULT CARD -->
-      <div id="result" class="result-card result-default">
-        <div class="result-placeholder">
-          <span>📍</span>
-          <p>Cliquez sur une école ou entrez une adresse pour obtenir le diagnostic chaleur.</p>
+      <!-- DIAGNOSTIC -->
+      <div class="diag-section">
+        <div class="section-header" id="toggle-diag">
+          <label class="section-label" style="margin:0">📊 Diagnostic</label>
+          <span class="chevron" id="chevron-diag">▾</span>
+        </div>
+        <div id="diag-container">
+          <div class="diag-placeholder">
+            <span>👆</span>
+            <p>Cliquez sur une école pour afficher son diagnostic.</p>
+          </div>
         </div>
       </div>
 
@@ -72,8 +114,6 @@
 
     <!-- MAP -->
     <main class="map-container">
-
-      <!-- COUCHE 1 : Felt 100% (zones chaleur/fraîcheur) -->
       <iframe
         id="felt-layer"
         width="100%"
@@ -81,13 +121,10 @@
         frameborder="0"
         src="https://felt.com/embed/map/Untitled-Map-trd59Cqj4RuKu8WX9Cw2eYCD?loc=44.84,-0.58,12z&legend=0&link=1&geolocation=0&cooperativeGestures=1"
       ></iframe>
-
-      <!-- COUCHE 2 : Leaflet transparent (marqueurs interactifs uniquement) -->
       <div id="map"></div>
-
       <div class="map-badge">© OpenStreetMap · Felt · Éducation nationale</div>
-
     </main>
+
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
